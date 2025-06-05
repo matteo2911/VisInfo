@@ -39,8 +39,3 @@ path:hover {
   filter: drop-shadow(0 0 8px gold);
   transform: scale(1.2); /* Funziona anche senza transizione CSS */
 }
-
-line.trail {
-  stroke-linecap: round;
-  filter: drop-shadow(0 0 3px white);
-}
