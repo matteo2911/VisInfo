@@ -1,104 +1,117 @@
-const width = window.innerWidth;
-const height = window.innerHeight;
+let svg = d3.select("#canvas");
+let statoClick = 0;
+let simboli, scalaX, scalaY, datiScie, dati;
 
-const svg = d3.select("#canvas")
-  .attr("width", width)
-  .attr("height", height);
+d3.json("data.json").then(jsonData => {
+  dati = jsonData;
 
-let clickState = 0; // 0 = prima posizione, 1 = seconda, 2 = terza
+  const valoriX = dati.flatMap(d => [d.v1, d.v3, d.v5]);
+  const valoriY = dati.flatMap(d => [d.v2, d.v4, d.v6]);
 
-d3.json("data.json").then(data => {
-  const xVals = data.flatMap(d => [d.v1, d.v3, d.v5]);
-  const yVals = data.flatMap(d => [d.v2, d.v4, d.v6]);
+  const scalaColori = d3.scaleOrdinal(d3.schemeCategory10);
 
-  const xScale = d3.scaleLinear()
-    .domain([d3.min(xVals), d3.max(xVals)])
-    .range([50, width - 50]);
+  datiScie = dati.map(() => []);
 
-  const yScale = d3.scaleLinear()
-    .domain([d3.min(yVals), d3.max(yVals)])
-    .range([50, height - 50]);
-
-  const colorScale = d3.scaleOrdinal(d3.schemeCategory10);
-
-  function getCoords(d, state) {
-    if (state === 0) return [xScale(d.v1), yScale(d.v2)];
-    if (state === 1) return [xScale(d.v3), yScale(d.v4)];
-    if (state === 2) return [xScale(d.v5), yScale(d.v6)];
+  function calcolaCoordinate(d, stato) {
+    if (stato === 0) return [scalaX(d.v1), scalaY(d.v2)];
+    if (stato === 1) return [scalaX(d.v3), scalaY(d.v4)];
+    if (stato === 2) return [scalaX(d.v5), scalaY(d.v6)];
   }
 
-  const symbols = svg.selectAll("path")
-    .data(data)
-    .enter()
-    .append("path")
-    .attr("d", d3.symbol().type(d3.symbolStar).size(800))
-    .attr("fill", (d, i) => colorScale(i))
-    .attr("stroke", "black")
-    .attr("stroke-width", 1)
-    .attr("transform", d => {
-      const [x, y] = getCoords(d, 0);
-      return `translate(${x},${y})`;
+  function aggiornaScale() {
+    const larghezza = window.innerWidth;
+    const altezza = window.innerHeight;
+
+    svg.attr("width", larghezza).attr("height", altezza);
+
+    scalaX = d3.scaleLinear()
+      .domain([d3.min(valoriX), d3.max(valoriX)])
+      .range([50, larghezza - 50]);
+
+    scalaY = d3.scaleLinear()
+      .domain([d3.min(valoriY), d3.max(valoriY)])
+      .range([50, altezza - 50]);
+  }
+
+  function disegna() {
+    aggiornaScale();
+
+    svg.selectAll("*").remove();
+
+    simboli = svg.selectAll("path")
+      .data(dati)
+      .enter()
+      .append("path")
+      .attr("d", d3.symbol().type(d3.symbolStar).size(800))
+      .attr("fill", (d, i) => scalaColori(i))
+      .attr("stroke", "black")
+      .attr("stroke-width", 1)
+      .attr("transform", d => {
+        const [x, y] = calcolaCoordinate(d, statoClick);
+        return `translate(${x},${y})`;
+      });
+
+    simboli.each(function(d) {
+      this.__posCorrente = calcolaCoordinate(d, statoClick);
     });
+  }
 
-  
-  const trailsData = data.map(() => []);
+  function aggiornaScie() {
+    datiScie.forEach((scia, i) => {
+      if (scia.length > 10) scia.shift();
 
-  function updateTrails() {
-    trailsData.forEach((trail, i) => {
-      if (trail.length > 10) trail.shift();
+      const selezioneScie = svg.selectAll(`circle.scia-${i}`)
+        .data(scia, (d, idx) => idx);
 
-      const trailSelection = svg.selectAll(`circle.trail-${i}`)
-        .data(trail, (d, idx) => idx);
-
-      trailSelection.enter()
+      selezioneScie.enter()
         .append("circle")
-        .attr("class", `trail trail-${i}`)
+        .attr("class", `scia scia-${i}`)
         .attr("r", 5)
         .attr("fill", "gold")
         .attr("opacity", 0)
         .attr("cx", d => d[0])
         .attr("cy", d => d[1])
-        .merge(trailSelection)
+        .merge(selezioneScie)
         .attr("cx", d => d[0])
         .attr("cy", d => d[1])
-        .attr("opacity", (d, idx) => (idx + 1) / trail.length * 0.8);
+        .attr("opacity", (d, idx) => (idx + 1) / scia.length * 0.8);
 
-      trailSelection.exit().remove();
+      selezioneScie.exit().remove();
     });
   }
 
-  function animateToState(state) {
-    let finished = 0;
-    const total = symbols.size();
+  function animaVersoStato(stato) {
+    let completate = 0;
+    const totale = simboli.size();
 
-    symbols.transition()
+    simboli.transition()
       .duration(1500)
       .ease(d3.easeLinear)
       .attrTween("transform", function(d, i) {
-        const [x0, y0] = this.__currentPos || getCoords(d, clickState);
-        const [x1, y1] = getCoords(d, state);
+        const [x0, y0] = this.__posCorrente || calcolaCoordinate(d, statoClick);
+        const [x1, y1] = calcolaCoordinate(d, stato);
 
-        this.__currentPos = [x1, y1];
-        trailsData[i] = [];
+        this.__posCorrente = [x1, y1];
+        datiScie[i] = [];
 
         return function(t) {
           const x = x0 + (x1 - x0) * t;
           const y = y0 + (y1 - y0) * t;
 
-          trailsData[i].push([x, y]);
-          if (trailsData[i].length > 10) trailsData[i].shift();
+          datiScie[i].push([x, y]);
+          if (datiScie[i].length > 10) datiScie[i].shift();
 
-          updateTrails();
+          aggiornaScie();
 
           return `translate(${x},${y})`;
         };
       })
       .on("end", function(d, i) {
-        finished++;
-        if (finished === total) {
-          for (let j = 0; j < total; j++) trailsData[j] = [];
+        completate++;
+        if (completate === totale) {
+          for (let j = 0; j < totale; j++) datiScie[j] = [];
 
-          svg.selectAll("circle.trail")
+          svg.selectAll("circle.scia")
             .transition()
             .duration(1200)
             .ease(d3.easeCubicOut)
@@ -110,15 +123,16 @@ d3.json("data.json").then(data => {
       });
   }
 
-  symbols.each(function(d) {
-    this.__currentPos = getCoords(d, 0);
-  });
-
   svg.on("click", () => {
-    clickState = (clickState + 1) % 3;
-    animateToState(clickState);
+    statoClick = (statoClick + 1) % 3;
+    animaVersoStato(statoClick);
   });
 
+  window.addEventListener("resize", () => {
+    disegna();
+  });
+
+  disegna();
 }).catch(err => {
   console.error("Errore caricando data.json:", err);
 });
