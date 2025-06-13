@@ -80,48 +80,63 @@ d3.json("data.json").then(jsonData => {
     });
   }
 
+  // gestione del movimento
   function animaVersoStato(stato) {
-    let completate = 0;
-    const totale = simboli.size();
+  let completate = 0;
+  const totale = simboli.size();
 
-    simboli.transition()
-      .duration(1500)
-      .ease(d3.easeLinear)
-      .attrTween("transform", function(d, i) {
-        const [x0, y0] = this.__posCorrente || calcolaCoordinate(d, statoClick);
-        const [x1, y1] = calcolaCoordinate(d, stato);
+  simboli.transition()
 
-        this.__posCorrente = [x1, y1];
-        datiScie[i] = [];
+    //durata del movimento
+    .duration(1500)
+    .ease(d3.easeLinear)
+    .attrTween("transform", function(d, i) {
+      // Prendi posizione corrente reale dalla trasformazione SVG
+      let x0, y0;
+      const ctm = this.getCTM();
+      if (ctm) {
+        x0 = ctm.e;
+        y0 = ctm.f;
+      } else {
+        [x0, y0] = calcolaCoordinate(d, statoClick);
+      }
 
-        return function(t) {
-          const x = x0 + (x1 - x0) * t;
-          const y = y0 + (y1 - y0) * t;
+      const [x1, y1] = calcolaCoordinate(d, stato);
 
-          datiScie[i].push([x, y]);
-          if (datiScie[i].length > 10) datiScie[i].shift();
+      this.__posCorrente = [x1, y1];
+      datiScie[i] = [];
 
-          aggiornaScie();
+      return function(t) {
+        const x = x0 + (x1 - x0) * t;
+        const y = y0 + (y1 - y0) * t;
 
-          return `translate(${x},${y})`;
-        };
-      })
-      .on("end", function(d, i) {
-        completate++;
-        if (completate === totale) {
-          for (let j = 0; j < totale; j++) datiScie[j] = [];
+        datiScie[i].push([x, y]);
+        if (datiScie[i].length > 10) datiScie[i].shift();
 
-          svg.selectAll("circle.scia")
-            .transition()
-            .duration(1200)
-            .ease(d3.easeCubicOut)
-            .attr("opacity", 0)
-            .on("end", function() {
-              d3.select(this).remove();
-            });
-        }
-      });
-  }
+        aggiornaScie();
+
+        return `translate(${x},${y})`;
+      };
+    })
+    .on("end", function(d, i) {
+      completate++;
+      if (completate === totale) {
+        for (let j = 0; j < totale; j++) datiScie[j] = [];
+
+        svg.selectAll("circle.scia")
+          .transition()
+
+          //durata della scia
+          .duration(1200)
+          .ease(d3.easeCubicOut)
+          .attr("opacity", 0)
+          .on("end", function() {
+            d3.select(this).remove();
+          });
+      }
+    });
+}
+
 
   svg.on("click", () => {
     statoClick = (statoClick + 1) % 3;
