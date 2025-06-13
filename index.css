@@ -3,41 +3,26 @@ body, html {
   margin: 0;
   padding: 0;
   height: 100%;
-  background: linear-gradient(135deg, #1e3c72, #2a5298);
   display: flex;
   justify-content: center;
   align-items: center;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
 svg#canvas {
-  border-radius: 15px;
   background: radial-gradient(circle at center, #0f1f3d 0%, #111b2e 100%);
   box-shadow: 0 0 15px rgba(255, 255, 255, 0.15);
-  cursor: pointer;
   width: 100vw;
   height: 100vh;
   max-width: none;
   max-height: none;
-  transition: box-shadow 0.3s ease;
 }
 
-svg#canvas:hover {
-  box-shadow: 0 0 25px rgba(255, 255, 255, 0.35);
-}
 
 /* Stelle */
 path {
   filter: drop-shadow(0 0 3px rgba(255, 255, 255, 0.7));
-  transition: fill 0.3s ease;
 }
 
-/* Hover stelle */
-path:hover {
-  fill: gold !important;
-  filter: drop-shadow(0 0 8px gold);
-  transform: scale(1.2);
-}
 
 /* Scie */
 circle.trail {
