@@ -5,10 +5,9 @@ const svg = d3.select("#canvas")
   .attr("width", width)
   .attr("height", height);
 
-let clickState = 0; // 0=prima posizione, 1=seconda, 2=terza
+let clickState = 0; // 0 = prima posizione, 1 = seconda, 2 = terza
 
 d3.json("data.json").then(data => {
-
   const xVals = data.flatMap(d => [d.v1, d.v3, d.v5]);
   const yVals = data.flatMap(d => [d.v2, d.v4, d.v6]);
 
@@ -41,21 +40,73 @@ d3.json("data.json").then(data => {
       return `translate(${x},${y})`;
     });
 
+  
+  const trailsData = data.map(() => []);
+
+  function updateTrails() {
+    trailsData.forEach((trail, i) => {
+      if (trail.length > 10) trail.shift();
+
+      const trailSelection = svg.selectAll(`circle.trail-${i}`)
+        .data(trail, (d, idx) => idx);
+
+      trailSelection.enter()
+        .append("circle")
+        .attr("class", `trail trail-${i}`)
+        .attr("r", 5)
+        .attr("fill", "gold")
+        .attr("opacity", 0)
+        .attr("cx", d => d[0])
+        .attr("cy", d => d[1])
+        .merge(trailSelection)
+        .attr("cx", d => d[0])
+        .attr("cy", d => d[1])
+        .attr("opacity", (d, idx) => (idx + 1) / trail.length * 0.8);
+
+      trailSelection.exit().remove();
+    });
+  }
+
   function animateToState(state) {
+    let finished = 0;
+    const total = symbols.size();
+
     symbols.transition()
-      .duration(1000)
+      .duration(1500)
       .ease(d3.easeLinear)
-      .attrTween("transform", function(d) {
+      .attrTween("transform", function(d, i) {
         const [x0, y0] = this.__currentPos || getCoords(d, clickState);
         const [x1, y1] = getCoords(d, state);
 
         this.__currentPos = [x1, y1];
+        trailsData[i] = [];
 
         return function(t) {
           const x = x0 + (x1 - x0) * t;
           const y = y0 + (y1 - y0) * t;
+
+          trailsData[i].push([x, y]);
+          if (trailsData[i].length > 10) trailsData[i].shift();
+
+          updateTrails();
+
           return `translate(${x},${y})`;
         };
+      })
+      .on("end", function(d, i) {
+        finished++;
+        if (finished === total) {
+          for (let j = 0; j < total; j++) trailsData[j] = [];
+
+          svg.selectAll("circle.trail")
+            .transition()
+            .duration(1200)
+            .ease(d3.easeCubicOut)
+            .attr("opacity", 0)
+            .on("end", function() {
+              d3.select(this).remove();
+            });
+        }
       });
   }
 

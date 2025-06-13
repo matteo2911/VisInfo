@@ -1,4 +1,4 @@
-/* Stile base per body e html */
+
 body, html {
   margin: 0;
   padding: 0;
@@ -9,7 +9,6 @@ body, html {
   align-items: center;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
-
 
 svg#canvas {
   border-radius: 15px;
@@ -27,15 +26,21 @@ svg#canvas:hover {
   box-shadow: 0 0 25px rgba(255, 255, 255, 0.35);
 }
 
-/* Stile per le stelline */
+/* Stelle */
 path {
   filter: drop-shadow(0 0 3px rgba(255, 255, 255, 0.7));
-  transition: fill 0.3s ease; /* Rimosso transform per evitare conflitti */
+  transition: fill 0.3s ease;
 }
 
-/* Effetto  sulle stelline */
+/* Hover stelle */
 path:hover {
   fill: gold !important;
   filter: drop-shadow(0 0 8px gold);
-  transform: scale(1.2); /* Funziona anche senza transizione CSS */
+  transform: scale(1.2);
+}
+
+/* Scie */
+circle.trail {
+  pointer-events: none;
+  transition: opacity 0.3s ease;
 }
