@@ -56,6 +56,8 @@ d3.json("data.json").then(jsonData => {
     });
   }
 
+  //gestione delle scie 
+
   function aggiornaScie() {
     datiScie.forEach((scia, i) => {
       if (scia.length > 10) scia.shift();
@@ -91,7 +93,11 @@ d3.json("data.json").then(jsonData => {
     .duration(1500)
     .ease(d3.easeLinear)
     .attrTween("transform", function(d, i) {
-      // Prendi posizione corrente reale dalla trasformazione SVG
+    
+    // Prendo la posizione della stella in tempo reale
+    /* Evito che, se il movimento non è ancora concluso, il secondo movimento parta dalle coordinate finali 
+    previste invece che da quelle attuali dellla stella*/ 
+
       let x0, y0;
       const ctm = this.getCTM();
       if (ctm) {
@@ -118,6 +124,9 @@ d3.json("data.json").then(jsonData => {
         return `translate(${x},${y})`;
       };
     })
+
+    //gestione dissolvenza delle scie 
+
     .on("end", function(d, i) {
       completate++;
       if (completate === totale) {
